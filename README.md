@@ -1,6 +1,3 @@
-# T480
-The last good laptop
-
 # OpenCore Triple-Boot Setup on Lenovo T480
 
 This document tracks all configuration steps taken to set up a triple-boot system (Windows 11 + NixOS + macOS Monterey) on a Lenovo T480 using OpenCore.
@@ -145,9 +142,15 @@ Other non-essential drivers are present and left enabled.
 ---
 
 ## ⏳ To Do Before Boot
-- [ ] Shrink Windows/NixOS partitions to free **50–100GB unallocated space** for macOS
-  - Use `diskmgmt.msc` in Windows or a Linux partition tool like `gparted`
-  - Do **not** format the unallocated space — the macOS installer will handle this
+- [x] Configure OpenCore and kexts
+- [ ] Shrink Windows or NixOS partition to leave **50–100GB unallocated space**
+  - Windows method:
+    - Open `diskmgmt.msc`
+    - Right-click Windows/NixOS partition → Shrink Volume
+    - Leave space unallocated (do not format)
+  - Linux method:
+    - Use `gparted` to resize and leave unallocated space
+    - Apply changes, reboot
 
 ---
 
