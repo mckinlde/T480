@@ -74,9 +74,10 @@ Then copied only the `.kext` folders (not the release folders) to: `E:\EFI\OC\Ke
 ## 🔧 Tools Used
 - [ProperTree](https://github.com/corpnewt/ProperTree) — for editing `config.plist`
 - [GenSMBIOS](https://github.com/corpnewt/GenSMBIOS) — for generating valid SMBIOS values
-- [Rufus](https://rufus.ie) — for formatting USB
+- [Rufus](https://rufus.ie) — for formatting USB and SD card
 - Windows `diskpart` — for manual partitioning and disk cleanup
 - [macrecovery.py](https://dortania.github.io/OpenCore-Install-Guide/installer-guide/windows-install.html) — for downloading BaseSystem from Apple
+- [GParted Live](https://gparted.org/livecd.php) — to shrink NixOS partition safely
 
 ---
 
@@ -137,20 +138,19 @@ Confirmed presence and enabled state of:
 - `OpenHfsPlus.efi` ✅
 - `OpenCanopy.efi` ✅
 
-Other non-essential drivers are present and left enabled.
+Other non-essential drivers/tools were cleaned up or disabled for clarity and faster boot.
 
 ---
 
 ## ⏳ To Do Before Boot
 - [x] Configure OpenCore and kexts
-- [ ] Shrink Windows or NixOS partition to leave **50–100GB unallocated space**
-  - Windows method:
-    - Open `diskmgmt.msc`
-    - Right-click Windows/NixOS partition → Shrink Volume
-    - Leave space unallocated (do not format)
-  - Linux method:
-    - Use `gparted` to resize and leave unallocated space
-    - Apply changes, reboot
+- [ ] Shrink NixOS partition to leave **50–100GB unallocated space**
+  - Created GParted Live bootable SD card using Rufus
+  - Boot into GParted Live from SD card using `F12`
+  - Identify NixOS partition (`ext4` or `btrfs`)
+  - Right-click → **Resize/Move** → shrink from the right
+  - Leave desired unallocated space (do not format)
+  - Apply changes and reboot
 
 ---
 
@@ -185,4 +185,3 @@ After reboot, you can remove the USB stick.
 ---
 
 Continue adding to this file as we proceed through macOS post-install (USB mapping, kext updates, etc.).
-
