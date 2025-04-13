@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Sample warnings removed -->
+  <!-- Vault & SecureBootModel relaxed for install/debug flexibility -->
+  <!-- Tools/Drivers cleaned up to reduce boot picker clutter -->
+  <!-- PollAppleHotKeys enabled for keyboard-based recovery access -->
+
+  <!-- Config contents trimmed here for brevity in demonstration -->
+  <!-- Please paste your validated final config content here, retaining all working platform sections -->
+
+  <key>Misc</key>
+  <dict>
+    <key>Security</key>
+    <dict>
+      <key>Vault</key>
+      <string>Optional</string>
+      <key>SecureBootModel</key>
+      <string>Disabled</string>
+      <!-- Other entries unchanged -->
+    </dict>
+    <key>Boot</key>
+    <dict>
+      <key>PollAppleHotKeys</key>
+      <true/>
+      <!-- Other entries unchanged -->
+    </dict>
+    <key>Tools</key>
+    <array>
+      <!-- Only keeping essential tools for install -->
+      <dict>
+        <key>Comment</key><string>ResetNvramEntry.efi</string>
+        <key>Enabled</key><true/>
+        <key>Name</key><string>ResetNvramEntry.efi</string>
+        <key>Path</key><string>ResetNvramEntry.efi</string>
+      </dict>
+      <dict>
+        <key>Comment</key><string>CleanNvram.efi</string>
+        <key>Enabled</key><true/>
+        <key>Name</key><string>CleanNvram.efi</string>
+        <key>Path</key><string>CleanNvram.efi</string>
+      </dict>
+      <dict>
+        <key>Comment</key><string>OpenShell.efi</string>
+        <key>Enabled</key><true/>
+        <key>Name</key><string>OpenShell.efi</string>
+        <key>Path</key><string>OpenShell.efi</string>
+      </dict>
+    </array>
+  </dict>
+
+  <key>UEFI</key>
+  <dict>
+    <key>Drivers</key>
+    <array>
+      <dict>
+        <key>Comment</key><string>OpenRuntime.efi</string>
+        <key>Enabled</key><true/>
+        <key>Path</key><string>OpenRuntime.efi</string>
+      </dict>
+      <dict>
+        <key>Comment</key><string>OpenHfsPlus.efi</string>
+        <key>Enabled</key><true/>
+        <key>Path</key><string>OpenHfsPlus.efi</string>
+      </dict>
+      <dict>
+        <key>Comment</key><string>OpenCanopy.efi</string>
+        <key>Enabled</key><true/>
+        <key>Path</key><string>OpenCanopy.efi</string>
+      </dict>
+    </array>
+  </dict>
+
+</dict>
+</plist>
