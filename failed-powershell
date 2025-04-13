@@ -1,0 +1,60 @@
+Looks like I can't run your powershell command, here's the output of it:
+
+```
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+
+PS C:\Users\dougl> Get-CimInstance Win32_ComputerSystem, Win32_Processor, Win32_NetworkAdapter | Format-List Name, Manufacturer, Product, Description
+Get-CimInstance : Cannot convert 'System.Object[]' to the type
+'Microsoft.Management.Infrastructure.CimInstance' required by
+parameter 'InputObject'. Specified method is not supported.
+At line:1 char:17
++ ... CimInstance Win32_ComputerSystem, Win32_Processor,
+Win32_NetworkAdapt ...
++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-CimIns
+   tance], ParameterBindingException
+    + FullyQualifiedErrorId : CannotConvertArgument,Microsoft.
+   Management.Infrastructure.CimCmdlets.GetCimInstanceCommand
+
+PS C:\Users\dougl> Get-CimInstance Win32_ComputerSystem, Win32_Processor, Win32_NetworkAdapter | Format-List Name, Manufacturer, Product, Description
+Get-CimInstance : Cannot convert 'System.Object[]' to the type
+'Microsoft.Management.Infrastructure.CimInstance' required by
+parameter 'InputObject'. Specified method is not supported.
+At line:1 char:17
++ ... CimInstance Win32_ComputerSystem, Win32_Processor,
+Win32_NetworkAdapt ...
++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-CimIns
+   tance], ParameterBindingException
+    + FullyQualifiedErrorId : CannotConvertArgument,Microsoft.
+   Management.Infrastructure.CimCmdlets.GetCimInstanceCommand
+
+PS C:\Users\dougl>
+```
+
+That said, your Command Prompt cmd works fine, here's its output:
+```
+Microsoft Windows [Version 10.0.22631.5189]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\dougl>wmic memorychip get capacity, speed
+Capacity     Speed
+17179869184  2400
+17179869184  2400
+
+
+C:\Users\dougl>
+```
+
+The Network adapters I see in Device Manager are "Intel(R) Ethernet Connection (4) I219-LM" and "Intel(R) Dual Band Wireless-AC 8265"
+
+The Display adapter I see in Device Manager is "Intel(R) UHD Graphics 620"
+
+And for unusual hardware I'm not sure what you need, but I see "Synaptics HID-Compliant Touch pad Device" so I don't think my hardware is unusual among T480 models.
+
+Is there anything else I should look up for you?  Should I try the powershell command again with powershell 7?
