@@ -1,0 +1,47 @@
+Perfect—since Rufus successfully flashed GParted onto your SD card, here's what to do next:
+
+---
+
+## 🧭 **Step-by-Step: Shrink NixOS Partition with GParted**
+
+### ✅ 1. **Boot from the SD Card**
+1. Reboot your T480
+2. Press `F12` to open the boot menu
+3. Select the SD card (might be listed as:
+   - `USB SD/MMC`
+   - or vendor name of the card)
+4. Choose the default boot option:  
+   ```
+   GParted Live (Default settings)
+   ```
+
+---
+
+### 🧰 2. **Use GParted to Shrink NixOS Partition**
+Once the GUI loads:
+
+1. **Identify the NixOS partition**:
+   - Likely labeled as `ext4` or `btrfs`
+   - You can verify by size, mount point, or label
+   - (Windows NTFS will be clearly labeled as such—don’t touch that one)
+
+2. **Right-click the NixOS partition** → choose **Resize/Move**
+
+3. In the dialog:
+   - Drag the **right edge** to shrink the partition
+   - Leave **at least 50–100 GB unallocated space**
+   - Don’t modify the start of the partition
+
+4. Click **Resize/Move** and then the **green check** to apply changes
+
+---
+
+### 🔁 3. **Exit GParted Safely**
+- After the operation finishes, click **"Exit"** and shut down
+- Remove the SD card
+
+---
+
+You’ll now have **unallocated space** on your SSD that macOS can see and format into APFS.
+
+Let me know when you’re done, and we’ll walk through the macOS install and partition formatting in Disk Utility.
