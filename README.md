@@ -1,175 +1,138 @@
-# OpenCore Triple-Boot Setup on Lenovo T480
+# OpenCore Hackintosh Setup on Lenovo T480 (macOS Sequoia / Monterey)
 
-This document tracks all configuration steps taken to set up a triple-boot system (Windows 11 + NixOS + macOS Monterey or Sequoia) on a Lenovo T480 using OpenCore.
+This document captures the full, trial-tested process to set up a fully bootable macOS system on the Lenovo T480 using OpenCore. It has been adjusted through hard-earned experience and includes every detail necessary for reinstallation or replication.
 
 ---
 
-## ✅ Summary of Hardware
-- Model: Lenovo ThinkPad T480 (Intel-only)
-- CPU: Intel Core i5-8350U (8th Gen, Kaby Lake-R)
-- GPU: Intel UHD 620 (iGPU only, no NVIDIA)
+## ✅ System Overview
+- Model: Lenovo ThinkPad T480
+- CPU: Intel Core i5-8350U (8th Gen)
+- GPU: Intel UHD 620
+- Wi-Fi: Intel 8265 (requires custom kext)
 - Ethernet: Intel I219-LM
-- Wi-Fi: Intel Dual Band Wireless-AC 8265
-- RAM: 32 GB DDR4 @ 2400 MHz
+- Input: Built-in PS/2 keyboard + trackpad
+- macOS: Sequoia (15.x), optionally Monterey (12.x)
 
 ---
 
-## 📦 USB Installer Creation (macOS + OpenCore)
+## 📦 Creating the Bootable USB
 
-### Step 1: Download macOS Installer
-- Used `macrecovery.py` from `OpenCorePkg/Utilities/macrecovery/`
-- Ran from Python 3 on a working system (Windows, Linux, or macOS)
-- Used board ID for `MacBookPro15,2` (matches T480's hardware):
-  ```bash
-  python macrecovery.py download -b Mac-827FB448E656EC26 -os default
-  ```
-- Output location defaults to `./RecoveryImage/` with:
-  - `BaseSystem.dmg` (~650–700 MB)
-  - `BaseSystem.chunklist` (a few KB)
-
-### Step 2: Prepare USB
-- USB drive size: 8GB+ (used 128GB FAT32-formatted USB)
-- Used **Rufus** with:
-  - Boot selection: **Non-bootable**
-  - Partition scheme: **GPT**
-  - File system: **FAT32**, Cluster size: 32 KB (default)
-
-### Step 3: Populate USB
-- Created folder:
-  ```
-  USB\com.apple.recovery.boot\
-  ```
-- Copied `BaseSystem.dmg` and `BaseSystem.chunklist` into that folder
-- Downloaded [OpenCorePkg RELEASE](https://github.com/acidanthera/OpenCorePkg/releases)
-- Copied the `EFI` folder from OpenCorePkg to:
-  ```
-  USB\EFI\
-  ```
-- Created and edited config.plist based on `Docs/Sample.plist`
-- Used **ProperTree** to snapshot and save configuration
-
-Final USB layout:
-```
-USB\
-├── com.apple.recovery.boot\
-│   ├── BaseSystem.dmg
-│   └── BaseSystem.chunklist
-└── EFI\
-    ├── BOOT\
-    │   └── BOOTx64.efi
-    └── OC\
-        ├── OpenCore.efi
-        ├── config.plist
-        ├── Kexts\
-        └── Drivers\
+### Step 1: Download macOS Recovery
+Run on a working Mac or PC with Python 3 installed:
+```bash
+python macrecovery.py download -b Mac-827FB448E656EC26 -os default
 ```
 
----
+Check that you get:
+- `BaseSystem.dmg` (~650 MB)
+- `BaseSystem.chunklist` (few KB)
 
-## 🧩 Kexts Included in EFI
-Copied to `EFI\OC\Kexts`:
+Place both in:
+```
+USB/com.apple.recovery.boot/
+```
+
+### Step 2: Format USB (Rufus)
+- Partition scheme: GPT
+- File system: FAT32
+- Set up USB root layout:
+```
+USB/
+├── EFI/
+│   ├── BOOT/
+│   └── OC/
+└── com.apple.recovery.boot/
+```
+
+### Step 3: Essential Kexts for USB
+Place these in `EFI/OC/Kexts/`:
 - `Lilu.kext`
 - `VirtualSMC.kext`
 - `WhateverGreen.kext`
 - `AppleALC.kext`
 - `IntelMausi.kext`
-- `AirportItlwm.kext` (v2.3.0 Monterey version)
-
-Post-install, also include:
+- `AirportItlwm.kext` (for Intel 8265 Wi-Fi)
 - `VoodooPS2Controller.kext` (for built-in keyboard/trackpad)
 
----
+🧠 Optional additions:
+- `USBToolBox.kext` (USB mapping)
+- `NVMeFix.kext` (SSD power fixes)
+- `HeliPort.app` (menu bar UI for Wi-Fi if using `itlwm.kext`)
 
-## 🔧 config.plist Configuration Summary
-- Used **MacBookPro15,2** SMBIOS
-- Generated using `GenSMBIOS`
-- Applied snapshot with **ProperTree**
-
-### PlatformInfo → Generic:
-- `SystemProductName`: `MacBookPro15,2`
-- `ROM`: base64 MAC or generated
-- `SystemUUID`: random UUID from GenSMBIOS
-
-### Booter Quirks:
-- AvoidRuntimeDefrag: `true`
-- DevirtualiseMmio: `true`
-- EnableSafeModeSlide: `true`
-- ProtectMemoryRegions: `true`
-- RebuildAppleMemoryMap: `true`
-- SetupVirtualMap: `true`
-- SignalAppleOS: `true`
-- SyncRuntimePermissions: `true`
-
-### Kernel Quirks:
-- AppleCpuPmCfgLock: `true`
-- AppleXcpmCfgLock: `true`
-- DisableIoMapper: `true`
-- DisableLinkeditJettison: `true`
-- EnableKernelPm: `true`
-- PowerTimeoutKernelPanic: `true`
-
-### Misc → Security:
-- ScanPolicy: `0`
-- SecureBootModel: `Disabled`
-- Vault: `Optional`
-
-### UEFI → Drivers:
-- Only include:
-  - `OpenRuntime.efi`
-  - `OpenHfsPlus.efi`
-  - `OpenCanopy.efi`
+Snapshot the USB EFI with **ProperTree** (`Ctrl + Shift + R`) and save `config.plist`.
 
 ---
 
-## ⏳ Pre-Boot Setup
-- Used GParted Live to shrink NixOS partition (~58 GB)
-- Windows was previously shrunk (~25 GB)
-- Left ~84 GB unallocated total for macOS
+## 🧩 OpenCore Config Notes
+- SMBIOS: `MacBookPro15,2`
+- Booter and Kernel quirks: snapshot from validated USB config
+- `ScanPolicy`: 0
+- `Vault`: Optional
+- `SecureBootModel`: Disabled
 
 ---
 
-## ⬇️ macOS Installation Notes
+## 🔧 Internal Installation Process
 
-### Monterey (Offline Install):
-- Does not require internet
-- Can proceed directly to Disk Utility + Install
+### 1. Boot USB → Select `EFI (external) (dmg)`
+### 2. In macOS Recovery:
+- View → Show All Devices
+- Format unallocated disk space as:
+  - Name: `Macintosh HD`
+  - Format: `APFS`
+  - Scheme: `GUID Partition Map`
 
-### Sequoia (Online Install):
-- Requires internet **at boot** to validate installer
-- Ethernet must be connected **before powering on** the machine
-- Verified working via `IntelMausi.kext`
-- macOS will otherwise fail with "Internet connection required" popup
+### 3. If Installing Sequoia
+✅ **Plug in Ethernet BEFORE booting**  
+Sequoia requires network validation even if your Wi-Fi isn’t working yet.
 
-### Disk Utility:
-1. View → Show All Devices
-2. Select unallocated space or full disk
-3. Format as:
-   - Name: `Macintosh HD`
-   - Format: `APFS`
-   - Scheme: `GUID Partition Map`
-
-Then proceed with install.
+### 4. Complete macOS Install → Reboot
+- Use OpenCore USB to continue installation
+- On first boot, complete Setup Assistant (skip Apple ID for now)
 
 ---
 
-## 🧹 Post-Install Steps
-- Boot back into OpenCore USB
-- Select installed macOS
-- After setup:
-  - Mount EFI partition of internal SSD
-  - Copy `EFI\` folder from USB to internal EFI
-  - Optional: Add `VoodooPS2Controller.kext` for internal input
-  - Snapshot updated config.plist again with ProperTree
+## 🔁 Finalize Internal EFI
+1. Mount internal EFI (likely `disk0s1`):
+```bash
+sudo diskutil mount disk0s1
+```
+2. Copy full `EFI/` folder from USB → `/Volumes/EFI/`
+3. Add missing kexts (like `VoodooPS2Controller.kext`, `AirportItlwm.kext`)
+4. Run ProperTree → Clean Snapshot → Save
+5. Reboot and test
+
+If booting fails without USB:
+- Boot from USB → OpenShell → map EFI partition
+- Run:
+```bash
+bcfg boot add 0 fs1:\EFI\BOOT\BOOTx64.efi "OpenCore Internal"
+```
+- `reset` → Boot without USB
 
 ---
 
-## Notes & Gotchas
-- Ethernet must be plugged in **before boot** to satisfy Sequoia installer
-- macOS Sequoia will require network; Monterey does not
-- `BaseSystem.dmg` must be ~650MB or OpenCore shows “LoadImage failed - Unsupported”
-- If only Windows/NixOS entries appear in OpenCore but don't boot, EFI bootloaders were likely wiped and will need reinstalling
-- Russian (or other language) UI may default if `prev-lang:kbd` is set in NVRAM — can be reset via OpenCore’s `Reset NVRAM`
+## ✅ Working State
+- Internal OpenCore boots macOS Sequoia
+- Internal keyboard/trackpad functional
+- Wi-Fi requires `AirportItlwm.kext` + snapshot
 
 ---
 
-✅ This process now supports installing **macOS Monterey or Sequoia** cleanly on a T480 and can be reused for additional machines with identical hardware.
+## 🧠 Lessons Learned
+- Always verify kext presence in `/Kexts` before snapshotting
+- Snapshot every time you add/remove a kext
+- Use ProperTree from a working Mac if GUI fails on target system
+- Sequoia forces network validation → Monterey may be easier for first-time installs
+- Keep full-featured USB EFI for future use or cloning
+
+---
+
+## 📦 Next Steps
+- Zip this working EFI folder for backup or replication
+- Reinstall Windows or NixOS if desired
+- Optional: create automated EFI image for use across multiple T480s
+
+---
+
+**This process is non-trivial and time-consuming—but fully documented here for reuse. Proceeding from a clean, working EFI is the best gift to yourself and others.**
