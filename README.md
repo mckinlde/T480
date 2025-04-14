@@ -14,37 +14,39 @@ This document tracks all configuration steps taken to set up a triple-boot syste
 
 ---
 
-## 📦 USB Installer Creation (macOS + OpenCore)
+## 📦 USB Installer Creation (macOS Monterey + OpenCore)
 
 ### Step 1: Download macOS Installer
-- Used `macrecovery.py` (from OpenCorePkg `Utilities/macrecovery/` folder) to download macOS Monterey (version 12)
-- Board ID used: `Mac-827FB448E656EC26`
-- Command used:
+- Used `macrecovery.py` from `OpenCorePkg/Utilities/macrecovery/`
+- Ran from Python 3 on a working system (Windows, Linux, or macOS)
+- Used this board ID (for `MacBookPro15,2`, which matches the T480’s CPU generation):
   ```bash
-  python macrecovery.py download -b Mac-827FB448E656EC26
+  python macrecovery.py download -b Mac-827FB448E656EC26 -os default
   ```
-- Output files:
-  - `BaseSystem.dmg`
-  - `BaseSystem.chunklist`
+- Output location defaults to `./RecoveryImage/` with:
+  - `BaseSystem.dmg` (✅ should be ~650 MB)
+  - `BaseSystem.chunklist` (✅ small .plist-like file)
 
-### Step 2: Format USB (Single GPT + FAT32 partition)
-- Used **Rufus**:
-  - Boot selection: Non bootable
-  - Partition scheme: GPT
-  - File system: FAT32
-  - Cluster size: 32 KB (default)
+### Step 2: Prepare USB
+- USB drive size: 8GB+ (used 128GB FAT32-formatted USB)
+- Used **Rufus** with these settings:
+  - Boot selection: **Non-bootable** (used to create FAT32 container)
+  - Partition scheme: **GPT**
+  - File system: **FAT32**, Cluster size: 32 KB (default)
 
-### Step 3: Copy macOS Recovery Files
-- Created directory on USB: `com.apple.recovery.boot`
-- Copied files:
-  - `BaseSystem.dmg`
-  - `BaseSystem.chunklist`
-
-### Step 4: Add OpenCore EFI
-- Downloaded latest OpenCore release (v1.0.4)
-- Used `Sample.plist` from `Docs/Sample.plist` as base config
-- Renamed to `config.plist`, copied to `EFI/OC`
-- Copied full `EFI` folder to root of USB
+### Step 3: Populate USB
+- Created folder:
+  ```
+  USB\com.apple.recovery.boot\
+  ```
+- Copied `BaseSystem.dmg` and `BaseSystem.chunklist` into that folder
+- Downloaded [OpenCorePkg RELEASE](https://github.com/acidanthera/OpenCorePkg/releases)
+- Copied the `EFI` folder from OpenCorePkg to:
+  ```
+  USB\EFI\
+  ```
+- Created and edited config.plist based on `Docs/Sample.plist`
+- Used **ProperTree** to snapshot and save configuration
 
 Final USB layout:
 ```
@@ -54,144 +56,113 @@ USB\
 │   └── BaseSystem.chunklist
 └── EFI\
     ├── BOOT\
+    │   └── BOOTx64.efi
     └── OC\
-        └── config.plist
+        ├── OpenCore.efi
+        ├── config.plist
+        ├── Kexts\
+        └── Drivers\
 ```
 
 ---
 
-## 🧩 Kexts Added (macOS Monterey-compatible)
-Downloaded and extracted to: `C:\Users\dougl\Downloads\Kext`
-Then copied only the `.kext` folders (not the release folders) to: `E:\EFI\OC\Kexts`
+## 🧩 Kexts Included in EFI
+Copied to `EFI\OC\Kexts`:
+- `Lilu.kext`
+- `VirtualSMC.kext`
+- `WhateverGreen.kext`
+- `AppleALC.kext`
+- `IntelMausi.kext`
+- `AirportItlwm.kext` (v2.3.0 Monterey version only)
 
-### Required Kexts:
-| Kext | Purpose |
-|------|---------|
-| Lilu.kext | Core patching engine |
-| VirtualSMC.kext | Emulates Apple SMC (optional plugins like SMCBatteryManager.kext not included for now) |
-| WhateverGreen.kext | iGPU graphics, brightness, etc. |
-| AppleALC.kext | Audio support |
-| IntelMausi.kext | Ethernet support (I219-LM) |
-| AirportItlwm.kext (v2.3.0 Monterey) | Wi-Fi support for Intel 8265 |
+Post-install, also include:
+- `VoodooPS2Controller.kext` (for built-in keyboard/trackpad)
 
 ---
 
-## 🔧 Tools Used
-- [ProperTree](https://github.com/corpnewt/ProperTree) — for editing `config.plist`
-- [GenSMBIOS](https://github.com/corpnewt/GenSMBIOS) — for generating valid SMBIOS values
-- [Rufus](https://rufus.ie) — for formatting USB and SD card
-- Windows `diskpart` — for manual partitioning and disk cleanup
-- [macrecovery.py](https://github.com/acidanthera/OpenCorePkg/blob/master/Utilities/macrecovery/macrecovery.py) — for downloading BaseSystem from Apple
-- [GParted Live](https://gparted.org/livecd.php) — to shrink NixOS partition safely
+## 🔧 config.plist Configuration Summary
+- Used **MacBookPro15,2** SMBIOS
+- Generated using `GenSMBIOS`
+- Applied snapshot with **ProperTree**
+
+### PlatformInfo → Generic:
+- `SystemProductName`: `MacBookPro15,2`
+- `ROM`: base64 MAC or generated
+- `SystemUUID`: random UUID from GenSMBIOS
+
+### Booter Quirks:
+- AvoidRuntimeDefrag: `true`
+- DevirtualiseMmio: `true`
+- EnableSafeModeSlide: `true`
+- ProtectMemoryRegions: `true`
+- RebuildAppleMemoryMap: `true`
+- SetupVirtualMap: `true`
+- SignalAppleOS: `true`
+- SyncRuntimePermissions: `true`
+
+### Kernel Quirks:
+- AppleCpuPmCfgLock: `true`
+- AppleXcpmCfgLock: `true`
+- DisableIoMapper: `true`
+- DisableLinkeditJettison: `true`
+- EnableKernelPm: `true`
+- PowerTimeoutKernelPanic: `true`
+
+### Misc → Security:
+- ScanPolicy: `0`
+- SecureBootModel: `Disabled`
+- Vault: `Optional`
+
+### UEFI → Drivers:
+- Only include:
+  - `OpenRuntime.efi`
+  - `OpenHfsPlus.efi`
+  - `OpenCanopy.efi`
 
 ---
 
-## ✅ Configuring OpenCore (Pre-Boot Setup)
-
-### Step 1: Clean Snapshot in ProperTree
-- Opened `config.plist` using ProperTree.bat
-- Ran **Clean Snapshot** (`Ctrl+Shift+R`) against `E:\EFI\OC\`
-- Verified that all kexts appeared in `Kernel → Add`
-
-### Step 2: Generate SMBIOS
-- Ran `GenSMBIOS.bat`
-- Installed MacSerial (option 1)
-- Selected config.plist (option 2 → `E:\EFI\OC\config.plist`)
-- Generated SMBIOS for model: `MacBookPro15,2`
-- Verified entries in `PlatformInfo → Generic`:
-  - `SystemProductName`: `MacBookPro15,2`
-  - `SystemSerialNumber`, `MLB`, `SystemUUID`, `ROM` (base64) all populated
-  - `SpoofVendor`: `true`
-  - `UpdateSMBIOS`, `UpdateNVRAM`, `UpdateDataHub`: `true`
-
-### Step 3: Set NVRAM Boot Args
-- Updated `boot-args` to:
-  ```
-  -v keepsyms=1 debug=0x100
-  ```
-- Verified in: `NVRAM → Add → 7C436110-AB2A-4BBB-A880-FE41995C9F82`
-
-### Step 4: Set Booter → Quirks
-| Quirk                    | Value  |
-|--------------------------|--------|
-| AvoidRuntimeDefrag       | true   |
-| DevirtualiseMmio         | true   |
-| EnableSafeModeSlide      | true   |
-| ProtectMemoryRegions     | true   |
-| ProtectSecureBoot        | false  |
-| RebuildAppleMemoryMap    | true   |
-| SetupVirtualMap          | true   |
-| SignalAppleOS            | true   |
-| SyncRuntimePermissions   | true   |
-
-### Step 5: Set Kernel → Quirks
-| Quirk                      | Value  |
-|----------------------------|--------|
-| AppleCpuPmCfgLock          | true   |
-| AppleXcpmCfgLock           | true   |
-| DisableIoMapper            | true   |
-| DisableLinkeditJettison    | true   |
-| EnableKernelPm             | true   |
-| LapicKernelPanic           | false  |
-| PowerTimeoutKernelPanic    | true   |
-| ThirdPartyDrives           | false  |
-| XhciPortLimit              | false  |
-
-### Step 6: UEFI Drivers Check
-Confirmed presence and enabled state of:
-- `OpenRuntime.efi` ✅
-- `OpenHfsPlus.efi` ✅
-- `OpenCanopy.efi` ✅
-
-### Step 7: Security + Boot Picker Cleanups
-- `ScanPolicy` set to `0` ✅
-- `Vault` set to `Optional` ✅
-- `SecureBootModel` set to `Disabled` ✅
-- `PollAppleHotKeys` enabled ✅
-- `Tools` trimmed to essential entries (`OpenShell`, `CleanNvram`, `ResetNvramEntry`) ✅
+## ⏳ Pre-Boot Setup
+- Used GParted Live to shrink NixOS partition (~58 GB)
+- Windows was previously shrunk (~25 GB)
+- Left ~84 GB unallocated total for macOS
 
 ---
 
-## ⏳ To Do Before Boot
-- [x] Configure OpenCore and kexts
-- [x] Shrink NixOS partition to leave **50–100GB unallocated space**
-  - Used GParted Live bootable SD card
-  - Shrunk `/dev/sda5` (ext4 root)
-  - Left 58 GB unallocated + 25 GB from earlier Windows shrink
-- [x] Regenerated `BaseSystem.dmg` + `.chunklist` using `macrecovery.py`
-  - Used Monterey-compatible board ID: `Mac-827FB448E656EC26`
-  - Placed in `USB:\com.apple.recovery.boot\`
-
----
-
-## ⬇️ macOS Installer Instructions
-Once the USB is ready:
-1. Reboot and press `F12` to open BIOS boot menu
-2. Select the USB drive (should show up as UEFI)
-3. At OpenCore boot picker, choose the **macOS Base System** entry
-
-### In macOS Recovery
-1. Open **Disk Utility**
+## ⬇️ macOS Monterey Install
+1. Reboot → Press `F12` → Select OpenCore USB
+2. At boot picker, select `EFI (external) (dmg)`
+3. macOS Base System loads (verbose boot appears)
+4. If pairing screen appears: connect USB keyboard/mouse
+5. In Disk Utility:
    - View → Show All Devices
-   - Select the unallocated space → erase as:
+   - Select free space on internal SSD
+   - Format as:
      - Name: `Macintosh HD`
      - Format: `APFS`
      - Scheme: `GUID Partition Map`
-2. Quit Disk Utility
-3. Launch **macOS Installer** and select `Macintosh HD`
+6. Close Disk Utility → Reinstall macOS Monterey
+7. Select `Macintosh HD` as target
 
 ---
 
-## 🧹 Immediate Post-Install Steps (After First Boot)
-- Boot again from USB
-- Select newly installed `macOS` (not installer)
-- Once in desktop:
-  - Mount EFI of internal disk
-  - Copy your working `EFI` folder from USB to internal disk EFI partition
-  - Use [MountEFI](https://github.com/corpnewt/MountEFI) or `diskutil` to do this on macOS
-
-After reboot, you can remove the USB stick.
+## 🧹 Post-Install Steps
+- Boot back into OpenCore USB
+- Select installed macOS
+- After setup:
+  - Mount EFI partition of internal SSD
+  - Copy `EFI\` folder from USB to internal EFI
+  - Optional: Add `VoodooPS2Controller.kext` for internal input
+  - Snapshot updated config.plist again with ProperTree
 
 ---
 
-Continue adding to this file as we proceed through macOS post-install (USB mapping, kext updates, etc.).
+## Notes & Gotchas
+- Sequoia installer requires internet — Monterey doesn’t
+- `BaseSystem.dmg` must be ~650MB or OpenCore will show “LoadImage failed - Unsupported”
+- Ethernet confirmed working in recovery via `IntelMausi.kext`
+- Russian-language UI may appear due to `prev-lang:kbd` → can be reset via NVRAM tool or `Reset NVRAM` from OpenCore
+- Windows/NixOS entries may show in BIOS but not boot if EFI entries are broken — they can be restored later
+
+---
+
+✅ This flow will reliably install macOS Monterey to a Lenovo T480 and can be reused for additional machines with identical hardware.
