@@ -17,7 +17,12 @@ This document tracks all configuration steps taken to set up a triple-boot syste
 ## 📦 USB Installer Creation (macOS + OpenCore)
 
 ### Step 1: Download macOS Installer
-- Used `macrecovery.py` (from OpenCore guide) to download macOS Monterey (version 12)
+- Used `macrecovery.py` (from OpenCorePkg `Utilities/macrecovery/` folder) to download macOS Monterey (version 12)
+- Board ID used: `Mac-827FB448E656EC26`
+- Command used:
+  ```bash
+  python macrecovery.py download -b Mac-827FB448E656EC26
+  ```
 - Output files:
   - `BaseSystem.dmg`
   - `BaseSystem.chunklist`
@@ -76,7 +81,7 @@ Then copied only the `.kext` folders (not the release folders) to: `E:\EFI\OC\Ke
 - [GenSMBIOS](https://github.com/corpnewt/GenSMBIOS) — for generating valid SMBIOS values
 - [Rufus](https://rufus.ie) — for formatting USB and SD card
 - Windows `diskpart` — for manual partitioning and disk cleanup
-- [macrecovery.py](https://dortania.github.io/OpenCore-Install-Guide/installer-guide/windows-install.html) — for downloading BaseSystem from Apple
+- [macrecovery.py](https://github.com/acidanthera/OpenCorePkg/blob/master/Utilities/macrecovery/macrecovery.py) — for downloading BaseSystem from Apple
 - [GParted Live](https://gparted.org/livecd.php) — to shrink NixOS partition safely
 
 ---
@@ -138,19 +143,24 @@ Confirmed presence and enabled state of:
 - `OpenHfsPlus.efi` ✅
 - `OpenCanopy.efi` ✅
 
-Other non-essential drivers/tools were cleaned up or disabled for clarity and faster boot.
+### Step 7: Security + Boot Picker Cleanups
+- `ScanPolicy` set to `0` ✅
+- `Vault` set to `Optional` ✅
+- `SecureBootModel` set to `Disabled` ✅
+- `PollAppleHotKeys` enabled ✅
+- `Tools` trimmed to essential entries (`OpenShell`, `CleanNvram`, `ResetNvramEntry`) ✅
 
 ---
 
 ## ⏳ To Do Before Boot
 - [x] Configure OpenCore and kexts
-- [ ] Shrink NixOS partition to leave **50–100GB unallocated space**
-  - Created GParted Live bootable SD card using Rufus
-  - Boot into GParted Live from SD card using `F12`
-  - Identify NixOS partition (`ext4` or `btrfs`)
-  - Right-click → **Resize/Move** → shrink from the right
-  - Leave desired unallocated space (do not format)
-  - Apply changes and reboot
+- [x] Shrink NixOS partition to leave **50–100GB unallocated space**
+  - Used GParted Live bootable SD card
+  - Shrunk `/dev/sda5` (ext4 root)
+  - Left 58 GB unallocated + 25 GB from earlier Windows shrink
+- [x] Regenerated `BaseSystem.dmg` + `.chunklist` using `macrecovery.py`
+  - Used Monterey-compatible board ID: `Mac-827FB448E656EC26`
+  - Placed in `USB:\com.apple.recovery.boot\`
 
 ---
 
@@ -158,7 +168,7 @@ Other non-essential drivers/tools were cleaned up or disabled for clarity and fa
 Once the USB is ready:
 1. Reboot and press `F12` to open BIOS boot menu
 2. Select the USB drive (should show up as UEFI)
-3. At OpenCore boot picker, choose the **macOS Installer**
+3. At OpenCore boot picker, choose the **macOS Base System** entry
 
 ### In macOS Recovery
 1. Open **Disk Utility**
