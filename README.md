@@ -1,6 +1,6 @@
 # OpenCore Triple-Boot Setup on Lenovo T480
 
-This document tracks all configuration steps taken to set up a triple-boot system (Windows 11 + NixOS + macOS Monterey) on a Lenovo T480 using OpenCore.
+This document tracks all configuration steps taken to set up a triple-boot system (Windows 11 + NixOS + macOS Monterey or Sequoia) on a Lenovo T480 using OpenCore.
 
 ---
 
@@ -14,23 +14,23 @@ This document tracks all configuration steps taken to set up a triple-boot syste
 
 ---
 
-## 📦 USB Installer Creation (macOS Monterey + OpenCore)
+## 📦 USB Installer Creation (macOS + OpenCore)
 
 ### Step 1: Download macOS Installer
 - Used `macrecovery.py` from `OpenCorePkg/Utilities/macrecovery/`
 - Ran from Python 3 on a working system (Windows, Linux, or macOS)
-- Used this board ID (for `MacBookPro15,2`, which matches the T480’s CPU generation):
+- Used board ID for `MacBookPro15,2` (matches T480's hardware):
   ```bash
   python macrecovery.py download -b Mac-827FB448E656EC26 -os default
   ```
 - Output location defaults to `./RecoveryImage/` with:
-  - `BaseSystem.dmg` (✅ should be ~650 MB)
-  - `BaseSystem.chunklist` (✅ small .plist-like file)
+  - `BaseSystem.dmg` (~650–700 MB)
+  - `BaseSystem.chunklist` (a few KB)
 
 ### Step 2: Prepare USB
 - USB drive size: 8GB+ (used 128GB FAT32-formatted USB)
-- Used **Rufus** with these settings:
-  - Boot selection: **Non-bootable** (used to create FAT32 container)
+- Used **Rufus** with:
+  - Boot selection: **Non-bootable**
   - Partition scheme: **GPT**
   - File system: **FAT32**, Cluster size: 32 KB (default)
 
@@ -73,7 +73,7 @@ Copied to `EFI\OC\Kexts`:
 - `WhateverGreen.kext`
 - `AppleALC.kext`
 - `IntelMausi.kext`
-- `AirportItlwm.kext` (v2.3.0 Monterey version only)
+- `AirportItlwm.kext` (v2.3.0 Monterey version)
 
 Post-install, also include:
 - `VoodooPS2Controller.kext` (for built-in keyboard/trackpad)
@@ -128,20 +128,27 @@ Post-install, also include:
 
 ---
 
-## ⬇️ macOS Monterey Install
-1. Reboot → Press `F12` → Select OpenCore USB
-2. At boot picker, select `EFI (external) (dmg)`
-3. macOS Base System loads (verbose boot appears)
-4. If pairing screen appears: connect USB keyboard/mouse
-5. In Disk Utility:
-   - View → Show All Devices
-   - Select free space on internal SSD
-   - Format as:
-     - Name: `Macintosh HD`
-     - Format: `APFS`
-     - Scheme: `GUID Partition Map`
-6. Close Disk Utility → Reinstall macOS Monterey
-7. Select `Macintosh HD` as target
+## ⬇️ macOS Installation Notes
+
+### Monterey (Offline Install):
+- Does not require internet
+- Can proceed directly to Disk Utility + Install
+
+### Sequoia (Online Install):
+- Requires internet **at boot** to validate installer
+- Ethernet must be connected **before powering on** the machine
+- Verified working via `IntelMausi.kext`
+- macOS will otherwise fail with "Internet connection required" popup
+
+### Disk Utility:
+1. View → Show All Devices
+2. Select unallocated space or full disk
+3. Format as:
+   - Name: `Macintosh HD`
+   - Format: `APFS`
+   - Scheme: `GUID Partition Map`
+
+Then proceed with install.
 
 ---
 
@@ -157,12 +164,12 @@ Post-install, also include:
 ---
 
 ## Notes & Gotchas
-- Sequoia installer requires internet — Monterey doesn’t
-- `BaseSystem.dmg` must be ~650MB or OpenCore will show “LoadImage failed - Unsupported”
-- Ethernet confirmed working in recovery via `IntelMausi.kext`
-- Russian-language UI may appear due to `prev-lang:kbd` → can be reset via NVRAM tool or `Reset NVRAM` from OpenCore
-- Windows/NixOS entries may show in BIOS but not boot if EFI entries are broken — they can be restored later
+- Ethernet must be plugged in **before boot** to satisfy Sequoia installer
+- macOS Sequoia will require network; Monterey does not
+- `BaseSystem.dmg` must be ~650MB or OpenCore shows “LoadImage failed - Unsupported”
+- If only Windows/NixOS entries appear in OpenCore but don't boot, EFI bootloaders were likely wiped and will need reinstalling
+- Russian (or other language) UI may default if `prev-lang:kbd` is set in NVRAM — can be reset via OpenCore’s `Reset NVRAM`
 
 ---
 
-✅ This flow will reliably install macOS Monterey to a Lenovo T480 and can be reused for additional machines with identical hardware.
+✅ This process now supports installing **macOS Monterey or Sequoia** cleanly on a T480 and can be reused for additional machines with identical hardware.
